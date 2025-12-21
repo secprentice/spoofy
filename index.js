@@ -273,33 +273,58 @@ function setInterfaceMAC (device, mac, port) {
   const isWirelessPort = port && port.toLowerCase() === 'wi-fi'
 
   if (process.platform === 'darwin') {
+    let macChangeError = null
+
     if (isWirelessPort) {
-      // Disassociate from wifi networks before changing MAC.
-      // On modern macOS (Sequoia+), the airport CLI tool no longer exists,
-      // so we use networksetup to power off WiFi as the disassociation method.
+      // For WiFi on modern macOS (Sequoia 15.4+, Tahoe 26+):
+      // The MAC can only be changed in a brief window after WiFi is powered on
+      // but BEFORE it connects to an access point.
       try {
+        // First, power off WiFi to disassociate
         cp.execSync(quote(['networksetup', '-setairportpower', device, 'off']))
-      } catch (err) {
-        throw new Error('Unable to disassociate from wifi networks')
-      }
-    }
-
-    // Bring interface down, change MAC, bring it back up
-    try {
-      cp.execSync(quote(['ifconfig', device, 'down']))
-      cp.execSync(quote(['ifconfig', device, 'ether', mac]))
-      cp.execSync(quote(['ifconfig', device, 'up']))
-    } catch (err) {
-      throw new Error('Unable to change MAC address')
-    }
-
-    // Power WiFi back on so it will associate with known networks (if any)
-    if (isWirelessPort) {
-      try {
+        // Immediately power it back on
         cp.execSync(quote(['networksetup', '-setairportpower', device, 'on']))
+        // Change MAC immediately in the window before it connects
+        cp.execSync('ifconfig ' + device + ' ether ' + mac)
       } catch (err) {
-        throw new Error('Unable to restart wifi device')
+        macChangeError = err
       }
+
+      // Always try to detect new hardware to help macOS recognize the change
+      try {
+        cp.execSync(quote(['networksetup', '-detectnewhardware']))
+      } catch (err) {
+        // Ignore detectnewhardware errors
+      }
+    } else {
+      // For non-WiFi interfaces: use standard down/change/up sequence
+      try {
+        cp.execSync(quote(['ifconfig', device, 'down']))
+      } catch (err) {
+        macChangeError = new Error('Unable to bring interface down: ' + err.message)
+      }
+
+      if (!macChangeError) {
+        try {
+          cp.execSync('ifconfig ' + device + ' ether ' + mac)
+        } catch (err) {
+          macChangeError = err
+        }
+      }
+
+      // Always bring interface back up
+      try {
+        cp.execSync(quote(['ifconfig', device, 'up']))
+      } catch (err) {
+        if (!macChangeError) {
+          macChangeError = new Error('Unable to bring interface up: ' + err.message)
+        }
+      }
+    }
+
+    // Throw MAC change error if there was one
+    if (macChangeError) {
+      throw new Error('Unable to change MAC address: ' + macChangeError.message)
     }
   } else if (process.platform === 'linux') {
     // Set the device's mac address.
