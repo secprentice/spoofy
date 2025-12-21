@@ -12,9 +12,6 @@ const quote = require('shell-quote').quote
 const zeroFill = require('zero-fill')
 const Winreg = require('winreg')
 
-// Path to Airport binary on macOS 10.7+
-const PATH_TO_AIRPORT = '/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport'
-
 // Windows registry key for interface MAC. Checked on Windows 7
 const WIN_REGISTRY_PATH = '\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}'
 
@@ -276,28 +273,22 @@ function setInterfaceMAC (device, mac, port) {
     let macChangeError = null
 
     if (isWirelessPort) {
-      // For WiFi on modern macOS (Sequoia 15.4+, Tahoe 26+):
-      // The MAC can only be changed in a brief window after WiFi is powered on
-      // but BEFORE it connects to an access point.
+      // On modern macOS, Wi-Fi MAC can only be changed in the brief window
+      // after power-on but before connecting to an access point
       try {
-        // First, power off WiFi to disassociate
         cp.execSync(quote(['networksetup', '-setairportpower', device, 'off']))
-        // Immediately power it back on
         cp.execSync(quote(['networksetup', '-setairportpower', device, 'on']))
-        // Change MAC immediately in the window before it connects
         cp.execSync('ifconfig ' + device + ' ether ' + mac)
       } catch (err) {
         macChangeError = err
       }
 
-      // Always try to detect new hardware to help macOS recognize the change
       try {
         cp.execSync(quote(['networksetup', '-detectnewhardware']))
       } catch (err) {
-        // Ignore detectnewhardware errors
+        // Ignore
       }
     } else {
-      // For non-WiFi interfaces: use standard down/change/up sequence
       try {
         cp.execSync(quote(['ifconfig', device, 'down']))
       } catch (err) {
@@ -312,7 +303,6 @@ function setInterfaceMAC (device, mac, port) {
         }
       }
 
-      // Always bring interface back up
       try {
         cp.execSync(quote(['ifconfig', device, 'up']))
       } catch (err) {
@@ -322,7 +312,6 @@ function setInterfaceMAC (device, mac, port) {
       }
     }
 
-    // Throw MAC change error if there was one
     if (macChangeError) {
       throw new Error('Unable to change MAC address: ' + macChangeError.message)
     }
