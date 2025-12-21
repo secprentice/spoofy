@@ -1,141 +1,161 @@
-# spoof [![travis][travis-image]][travis-url] [![npm][npm-image]][npm-url] [![downloads][downloads-image]][downloads-url] [![javascript style guide][standard-image]][standard-url]
+# spoofy
 
-[travis-image]: https://img.shields.io/travis/feross/spoof/master.svg
-[travis-url]: https://travis-ci.org/feross/spoof
-[npm-image]: https://img.shields.io/npm/v/spoof.svg
-[npm-url]: https://npmjs.org/package/spoof
-[downloads-image]: https://img.shields.io/npm/dm/spoof.svg
-[downloads-url]: https://npmjs.org/package/spoof
-[standard-image]: https://img.shields.io/badge/code_style-standard-brightgreen.svg
-[standard-url]: https://standardjs.com
+> **⚠️ Work in Progress**: This is a modernized fork of the original `spoof` project, updated for compatibility with modern macOS versions (Sequoia 15.4+, Tahoe 26+). This build is not stable and may contain bugs as we continue porting to newer environments. Use at your own risk.
 
 ### Easily spoof your MAC address in macOS, Windows, & Linux!
 
-Node.js port of the popular [SpoofMAC](https://pypi.python.org/pypi/SpoofMAC/) Python utility (GitHub: [feross/SpoofMAC](https://github.com/feross/SpoofMAC)).
+A Node.js utility for changing MAC addresses across different operating systems.
 
 ![anonymous](img/img.png)
 
-## Why?
+## About This Fork
 
-I made this because changing your MAC address on macOS is harder than it should be. The Wi-Fi card needs to be manually disassociated from any connected networks in order for the change to apply correctly – super annoying! Doing this manually each time is tedious and lame.
+This repository is a fork of the original `spoof` project, updated to work with modern macOS versions where Apple has removed the `airport` CLI tool and introduced new WiFi driver restrictions.
 
-Instead, just run `spoof` and change your MAC address in one command.
+### What's Changed
 
-**Now for Windows and Linux, too!**
+- **Modern macOS Support**: Fixed MAC spoofing for macOS Sequoia 15.4+ and Tahoe 26+
+- **Removed `airport` dependency**: The deprecated `airport -z` command has been replaced with modern `networksetup` commands
+- **Timing-sensitive MAC changes**: WiFi MAC addresses are now changed in the brief window after power-on but before network connection
+- **Better error handling**: Ensures WiFi interface is always restored, even if MAC change fails
+- **Cleaner codebase**: Removed deprecated code paths and unnecessary constants
 
-## Instructions for beginners
+## Installation
 
-Here are some easy install instructions for complete beginners.
+Clone this repository and install dependencies:
 
-1. Install [node.js](http://nodejs.org/) (it's a programming platform like Python, Java, etc.)
+```bash
+git clone https://github.com/basedbytes/spoofy.git
+cd spoofy
+npm install
+```
 
-2. Open **Terminal**. Let's use Spotlight to find it.
+You can then run the tool directly:
 
-  ![terminal](img/spotlight-terminal.png)
+```bash
+node bin/cmd.js --help
+```
 
-3. Install **spoof** by typing this command and pressing `Enter`.
+Or install it globally:
 
-  ```bash
-  npm install spoof -g
-  ```
+```bash
+npm install -g .
+```
 
-  That's it! **spoof** is installed.
+## Instructions for Beginners
 
-3. Now, let's print out the **help page**. Just like before, run this command in **Terminal**.
+1. Install [Node.js](https://nodejs.org/) (it's a programming platform like Python, Java, etc.)
 
-  ```bash
-  spoof --help
-  ```
+2. Open **Terminal**. On macOS, use Spotlight (⌘ + Space) to find it.
 
-4. Now, let's print out all our network devices.
+3. Clone and install this repository:
 
-  ```bash
-  spoof list
-  ```
+   ```bash
+   git clone https://github.com/basedbytes/spoofy.git
+   cd spoofy
+   npm install
+   npm install -g .
+   ```
 
-5. Find the device you want to set or randomize the MAC address for in the list. Wi-Fi is usually called `en0` on modern Macs. Then, run this command:
-
-  ```bash
-  sudo spoof randomize en0
-  ```
-
-  You may need to reconnect to the Wi-Fi hotspot you were connected to. But, that's it! Your MAC address is changed. You can confirm by re-running:
+4. Now, print out all your network devices:
 
    ```bash
    spoof list
    ```
 
-## Full command list
+5. Find the device you want to change. Wi-Fi is usually called `en0` on modern Macs. Then run:
 
-You can always see up-to-date usage instructions by running spoof --help.
+   ```bash
+   sudo spoof randomize en0
+   ```
+
+   You may need to reconnect to your Wi-Fi network afterward. Your MAC address is now changed!
+
+## Usage
+
+You can always see up-to-date usage instructions by running `spoof --help`.
 
 ### List available devices
 
 ```bash
 spoof list
-- "Ethernet" on device "en0" with MAC address 70:56:51:BE:B3:00
-- "Wi-Fi" on device "en1" with MAC address 70:56:51:BE:B3:01 currently set to 70:56:51:BE:B3:02
+```
+
+Output:
+```
+- "Ethernet" on device "en4" with MAC address 70:56:51:BE:B3:00
+- "Wi-Fi" on device "en0" with MAC address 70:56:51:BE:B3:01 currently set to 70:56:51:BE:B3:02
 - "Bluetooth PAN" on device "en1"
 ```
 
-### List available devices, but only those on Wi-Fi
+### List only Wi-Fi devices
 
 ```bash
 spoof list --wifi
-- "Wi-Fi" on device "en0" with MAC address 70:56:51:BE:B3:6F
 ```
 
 ### Randomize MAC address *(requires root)*
 
-You can use the hardware port name, such as:
-
+Using hardware port name:
 ```bash
-spoof randomize wi-fi
+sudo spoof randomize wi-fi
 ```
 
-or the device name, such as:
-
+Or using device name:
 ```bash
-spoof randomize en0
+sudo spoof randomize en0
 ```
 
-### Set device MAC address to something specific *(requires root)*
+### Set specific MAC address *(requires root)*
 
 ```bash
-spoof set 00:00:00:00:00:00 en0
+sudo spoof set 00:11:22:33:44:55 en0
 ```
 
-### Reset device to its original MAC address *(requires root)*
-
-While not always possible (because sometimes the original hardware MAC
-isn't available), you can try setting the MAC address of a device back
-to its burned-in address using `reset`:
+### Reset to original MAC address *(requires root)*
 
 ```bash
-spoof reset wi-fi
+sudo spoof reset wi-fi
 ```
 
-On macOS, another option to reset your MAC address is to simply restart your
-computer. macOS doesn't preserve changes to your MAC address between restarts.
+**Note**: On macOS, restarting your computer will also reset your MAC address to the original hardware address.
 
-## Linux support?
+## Platform Support
 
-Yep!
+### macOS
+- ✅ Tested on macOS Tahoe 26.2
+- ✅ Works on macOS Sequoia 15.4+
+- ⚠️ Older versions may work but are untested
 
-Linux support requires the `ifconfig` utility to be installed. It comes
-pre-installed with most Linux distributions.
+### Linux
+Linux support requires the `ifconfig` utility, which comes pre-installed with most distributions.
 
-## Windows support?
+### Windows
+Windows support is included but may be less thoroughly tested on modern versions.
 
-Yep!
+## Known Issues
 
-## Automatically randomize MAC address on startup
+- WiFi will briefly disconnect when changing MAC address
+- Some network restrictions or hardware may prevent MAC spoofing
+- System Integrity Protection (SIP) must be enabled for this to work
 
-If you want to set or randomize your MAC address and have it persist between restarts on
-macOS, consider using the Python version of this program,
-[SpoofMAC](https://github.com/feross/SpoofMAC), and following the instructions
-for [running automatically on startup](https://github.com/feross/spoofmac#optional-run-automatically-at-startup).
+## Troubleshooting
+
+If you encounter errors:
+
+1. Make sure you're running with `sudo` (required for network changes)
+2. Ensure WiFi is turned on before attempting to change MAC
+3. On modern macOS, you may need to reconnect to WiFi after the change
+4. Try running `networksetup -detectnewhardware` if changes don't take effect
+
+## Contributing
+
+This is an active fork. Contributions, bug reports, and feature requests are welcome!
 
 ## License
 
-MIT. Copyright [Feross Aboukhadijeh](https://feross.org).
+MIT License (inherited from original project)
+
+## Credits
+
+Originally based on the `spoof` project. This fork maintains compatibility with modern operating systems.
