@@ -23,54 +23,34 @@ This repository is a fork of the original `spoof` project, updated to work with 
 
 ## Installation
 
-Clone this repository and install dependencies:
+### From npm
+
+```bash
+npm install -g spoofy
+```
+
+### From source
 
 ```bash
 git clone https://github.com/basedbytes/spoofy.git
 cd spoofy
 npm install
-```
-
-You can then run the tool directly:
-
-```bash
-node bin/cmd.js --help
-```
-
-Or install it globally:
-
-```bash
 npm install -g .
 ```
 
-## Instructions for Beginners
+## Quick Start
 
-1. Install [Node.js](https://nodejs.org/) (it's a programming platform like Python, Java, etc.)
+List network interfaces:
+```bash
+spoofy list
+```
 
-2. Open **Terminal**. On macOS, use Spotlight (⌘ + Space) to find it.
+Randomize MAC address (WiFi is typically `en0` on macOS):
+```bash
+sudo spoofy randomize en0
+```
 
-3. Clone and install this repository:
-
-   ```bash
-   git clone https://github.com/basedbytes/spoofy.git
-   cd spoofy
-   npm install
-   npm install -g .
-   ```
-
-4. Now, print out all your network devices:
-
-   ```bash
-   spoofy list
-   ```
-
-5. Find the device you want to change. Wi-Fi is usually called `en0` on modern Macs. Then run:
-
-   ```bash
-   sudo spoofy randomize en0
-   ```
-
-   You may need to reconnect to your Wi-Fi network afterward. Your MAC address is now changed!
+**Note:** WiFi will disconnect briefly and may need to reconnect to networks.
 
 ## Usage
 
